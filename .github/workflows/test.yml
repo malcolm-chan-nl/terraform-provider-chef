@@ -52,6 +52,7 @@ jobs:
           - '0.15.*'
           - '1.0.*'
           - '1.1.*'
+          - '1.2.*'
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
