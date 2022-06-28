@@ -24,6 +24,7 @@ func New(version string) func() *schema.Provider {
 				"chef_data_bag_item": resourceChefDataBagItem(),
 				"chef_environment":   resourceChefEnvironment(),
 				"chef_client":        resourceChefClient(),
+				"chef_client_key":    resourceChefClientKey(),
 				"chef_node":          resourceChefNode(),
 				"chef_role":          resourceChefRole(),
 			},
