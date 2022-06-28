@@ -24,9 +24,12 @@ description: |-
 - `automatic_attributes_json` (String)
 - `default_attributes_json` (String)
 - `environment_name` (String)
-- `id` (String) The ID of this resource.
 - `normal_attributes_json` (String)
 - `override_attributes_json` (String)
 - `run_list` (List of String)
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

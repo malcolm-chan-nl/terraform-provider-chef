@@ -23,8 +23,11 @@ description: |-
 
 - `default_attributes_json` (String)
 - `description` (String)
-- `id` (String) The ID of this resource.
 - `override_attributes_json` (String)
 - `run_list` (List of String)
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 
