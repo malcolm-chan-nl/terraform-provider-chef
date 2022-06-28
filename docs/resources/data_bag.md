@@ -19,12 +19,9 @@ description: |-
 
 - `name` (String)
 
-### Optional
-
-- `id` (String) The ID of this resource.
-
 ### Read-Only
 
 - `api_uri` (String)
+- `id` (String) The ID of this resource.
 
 
