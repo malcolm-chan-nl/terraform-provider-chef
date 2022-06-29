@@ -39,7 +39,7 @@ func testAccDataBagItemCheck(rn string, name *string) resource.TestCheckFunc {
 			return fmt.Errorf("data bag item id not set")
 		}
 
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		content, err := client.DataBags.GetItem("terraform-acc-test-bag-item-basic", rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting data bag item: %s", err)
@@ -65,7 +65,7 @@ func testAccDataBagItemCheck(rn string, name *string) resource.TestCheckFunc {
 
 func testAccDataBagItemCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		_, err := client.DataBags.GetItem("terraform-acc-test-bag-item-basic", name)
 		if err == nil {
 			return fmt.Errorf("data bag item still exists")

@@ -29,7 +29,7 @@ func resourceChefClient() *schema.Resource {
 }
 
 func CreateClient(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	client, err := clientFromResourceData(d)
 	if err != nil {
@@ -45,7 +45,7 @@ func CreateClient(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateClient(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	client, err := clientFromResourceData(d)
 	if err != nil {
@@ -62,7 +62,7 @@ func UpdateClient(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadClient(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	name := d.Id()
 
@@ -85,7 +85,7 @@ func ReadClient(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteClient(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	name := d.Id()
 	err := c.Clients.Delete(name)

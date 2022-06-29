@@ -77,7 +77,7 @@ func testAccNodeCheckExists(rn string, node *chefc.Node) resource.TestCheckFunc 
 			return fmt.Errorf("node id not set")
 		}
 
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		gotNode, err := client.Nodes.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting node: %s", err)
@@ -91,7 +91,7 @@ func testAccNodeCheckExists(rn string, node *chefc.Node) resource.TestCheckFunc 
 
 func testAccNodeCheckDestroy(node *chefc.Node) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		_, err := client.Nodes.Get(node.Name)
 		if err == nil {
 			return fmt.Errorf("node still exists")

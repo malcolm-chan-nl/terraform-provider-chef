@@ -27,6 +27,7 @@ func New(version string) func() *schema.Provider {
 				"chef_client_key":    resourceChefClientKey(),
 				"chef_node":          resourceChefNode(),
 				"chef_role":          resourceChefRole(),
+				"chef_user_key":      resourceChefUserKey(),
 			},
 			Schema: map[string]*schema.Schema{
 				"server_url": {
@@ -63,6 +64,11 @@ func New(version string) func() *schema.Provider {
 	}
 }
 
+type chefClient struct {
+	*chefc.Client
+	Global *chefc.Client
+}
+
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := &chefc.Config{
 		Name:    d.Get("client_name").(string),
@@ -90,7 +96,23 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			},
 		}
 	}
-	return client, nil
+	if split := strings.Split(config.BaseURL, "/organizations/"); len(split) > 1 {
+		config.BaseURL = split[0]
+		globalClient, err := chefc.NewClient(config)
+		if err != nil {
+			return nil, diag.Diagnostics{
+				{
+					Severity:      diag.Error,
+					Summary:       "Error creating Chef Client",
+					Detail:        fmt.Sprint(err),
+					AttributePath: cty.GetAttrPath("client_name"),
+				},
+			}
+		}
+		return &chefClient{client, globalClient}, nil
+	}
+
+	return &chefClient{client, client}, nil
 }
 
 func providerPrivateKeyEnvDefault() (interface{}, error) {

@@ -69,7 +69,7 @@ func testAccEnvironmentCheckExists(rn string, env *chefc.Environment) resource.T
 			return fmt.Errorf("environment id not set")
 		}
 
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		gotEnv, err := client.Environments.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting environment: %s", err)
@@ -83,7 +83,7 @@ func testAccEnvironmentCheckExists(rn string, env *chefc.Environment) resource.T
 
 func testAccEnvironmentCheckDestroy(env *chefc.Environment) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		_, err := client.Environments.Get(env.Name)
 		if err == nil {
 			return fmt.Errorf("environment still exists")

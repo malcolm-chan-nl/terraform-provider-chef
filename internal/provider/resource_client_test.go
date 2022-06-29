@@ -50,7 +50,7 @@ func testAccClientCheckExists(rn string, client *chefc.ApiNewClient) resource.Te
 			return fmt.Errorf("client id not set")
 		}
 
-		c := testAccProvider.Meta().(*chefc.Client)
+		c := testAccProvider.Meta().(*chefClient)
 		gotClient, err := c.Clients.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting client: %s", err)
@@ -65,7 +65,7 @@ func testAccClientCheckExists(rn string, client *chefc.ApiNewClient) resource.Te
 
 func testAccClientCheckDestroy(client *chefc.ApiNewClient) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		c := testAccProvider.Meta().(*chefc.Client)
+		c := testAccProvider.Meta().(*chefClient)
 		o, err := c.Clients.Get(client.Name)
 		if err == nil {
 			return fmt.Errorf("client still exists: %#v", o)

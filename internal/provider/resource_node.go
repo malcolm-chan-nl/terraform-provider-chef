@@ -64,7 +64,7 @@ func resourceChefNode() *schema.Resource {
 }
 
 func CreateNode(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	node, err := nodeFromResourceData(d)
 	if err != nil {
@@ -81,7 +81,7 @@ func CreateNode(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateNode(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	node, err := nodeFromResourceData(d)
 	if err != nil {
@@ -98,7 +98,7 @@ func UpdateNode(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadNode(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 
@@ -151,7 +151,7 @@ func ReadNode(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteNode(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 	err := client.Nodes.Delete(name)

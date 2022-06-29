@@ -27,7 +27,7 @@ func resourceChefDataBag() *schema.Resource {
 }
 
 func CreateDataBag(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	dataBag := &chefc.DataBag{
 		Name: d.Get("name").(string),
@@ -44,7 +44,7 @@ func CreateDataBag(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadDataBag(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	// The Chef API provides no API to read a data bag's metadata,
 	// but we can try to read its items and use that as a proxy for
@@ -65,7 +65,7 @@ func ReadDataBag(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteDataBag(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 

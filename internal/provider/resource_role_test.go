@@ -71,7 +71,7 @@ func testAccRoleCheckExists(rn string, role *chefc.Role) resource.TestCheckFunc 
 			return fmt.Errorf("role id not set")
 		}
 
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		gotRole, err := client.Roles.Get(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting role: %s", err)
@@ -85,7 +85,7 @@ func testAccRoleCheckExists(rn string, role *chefc.Role) resource.TestCheckFunc 
 
 func testAccRoleCheckDestroy(role *chefc.Role) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		_, err := client.Roles.Get(role.Name)
 		if err == nil {
 			return fmt.Errorf("role still exists")

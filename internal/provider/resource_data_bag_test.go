@@ -36,7 +36,7 @@ func testAccDataBagCheckExists(rn string, name *string) resource.TestCheckFunc {
 			return fmt.Errorf("data bag id not set")
 		}
 
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		_, err := client.DataBags.ListItems(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting data bag: %s", err)
@@ -50,7 +50,7 @@ func testAccDataBagCheckExists(rn string, name *string) resource.TestCheckFunc {
 
 func testAccDataBagCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		client := testAccProvider.Meta().(*chefc.Client)
+		client := testAccProvider.Meta().(*chefClient)
 		result, err := client.DataBags.ListItems(name)
 		if err == nil && len(*result) != 0 {
 			return fmt.Errorf("data bag still exists")

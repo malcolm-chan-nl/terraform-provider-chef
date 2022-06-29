@@ -38,7 +38,7 @@ type chefClientKey struct {
 }
 
 func CreateClientKey(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	key, err := clientKeyFromResourceData(d)
 	if err != nil {
@@ -49,12 +49,12 @@ func CreateClientKey(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetId(key.Client + key.Key.Name)
+	d.SetId(key.Client + "+" + key.Key.Name)
 	return ReadClientKey(d, meta)
 }
 
 func UpdateClientKey(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	key, err := clientKeyFromResourceData(d)
 	if err != nil {
@@ -65,12 +65,12 @@ func UpdateClientKey(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetId(key.Client + key.Key.Name)
+	d.SetId(key.Client + "+" + key.Key.Name)
 	return ReadClientKey(d, meta)
 }
 
 func ReadClientKey(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	key, err := clientKeyFromResourceData(d)
 	if err != nil {
@@ -97,7 +97,7 @@ func ReadClientKey(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteClientKey(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefc.Client)
+	c := meta.(*chefClient)
 
 	key, err := clientKeyFromResourceData(d)
 	if err != nil {

@@ -51,7 +51,7 @@ func resourceChefEnvironment() *schema.Resource {
 }
 
 func CreateEnvironment(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	env, err := environmentFromResourceData(d)
 	if err != nil {
@@ -68,7 +68,7 @@ func CreateEnvironment(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateEnvironment(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	env, err := environmentFromResourceData(d)
 	if err != nil {
@@ -85,7 +85,7 @@ func UpdateEnvironment(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadEnvironment(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 
@@ -126,7 +126,7 @@ func ReadEnvironment(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteEnvironment(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 

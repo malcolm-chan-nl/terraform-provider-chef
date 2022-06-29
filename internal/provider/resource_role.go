@@ -55,7 +55,7 @@ func resourceChefRole() *schema.Resource {
 }
 
 func CreateRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	role, err := roleFromResourceData(d)
 	if err != nil {
@@ -96,7 +96,7 @@ func CreateRole(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func UpdateRole(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	role, err := roleFromResourceData(d)
 	if err != nil {
@@ -113,7 +113,7 @@ func UpdateRole(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadRole(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 
@@ -155,7 +155,7 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteRole(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*chefc.Client)
+	client := meta.(*chefClient)
 
 	name := d.Id()
 
