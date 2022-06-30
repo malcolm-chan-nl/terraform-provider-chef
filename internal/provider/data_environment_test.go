@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccEnvironment_basic(t *testing.T) {
+func TestAccDataEnvironment_basic(t *testing.T) {
 	var env chefc.Environment
 
 	resource.Test(t, resource.TestCase{
@@ -20,9 +20,9 @@ func TestAccEnvironment_basic(t *testing.T) {
 		CheckDestroy:      testAccEnvironmentCheckDestroy(&env),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEnvironmentConfig_basic,
+				Config: testAccDataEnvironmentConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccEnvironmentCheckExists("chef_environment.test", &env),
+					testAccEnvironmentCheckExists("data.chef_environment.test", &env),
 					func(s *terraform.State) error {
 
 						if expected := "terraform-acc-test-basic"; env.Name != expected {
@@ -57,48 +57,7 @@ func TestAccEnvironment_basic(t *testing.T) {
 	})
 }
 
-func testAccEnvironmentCheckExists(rn string, env *chefc.Environment) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[rn]
-		if !ok {
-			return fmt.Errorf("resource not found: %s", rn)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("environment id not set")
-		}
-
-		client := testAccProvider.Meta().(*chefClient)
-		gotEnv, err := client.Environments.Get(rs.Primary.ID)
-		if err != nil {
-			return fmt.Errorf("error getting environment: %s", err)
-		}
-
-		*env = *gotEnv
-
-		return nil
-	}
-}
-
-func testAccEnvironmentCheckDestroy(env *chefc.Environment) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		client := testAccProvider.Meta().(*chefClient)
-		_, err := client.Environments.Get(env.Name)
-		if err == nil {
-			return fmt.Errorf("environment still exists")
-		}
-		if _, ok := err.(*chefc.ErrorResponse); !ok {
-			// A more specific check is tricky because Chef Server can return
-			// a few different error codes in this case depending on which
-			// part of its stack catches the error.
-			return fmt.Errorf("got something other than an HTTP error (%v) when getting environment", err)
-		}
-
-		return nil
-	}
-}
-
-const testAccEnvironmentConfig_basic = `
+const testAccDataEnvironmentConfig_basic = `
 resource "chef_environment" "test" {
   name = "terraform-acc-test-basic"
   description = "Terraform Acceptance Tests"
@@ -115,5 +74,9 @@ EOT
   cookbook_constraints = {
     "terraform" = "= 1.0.0"
   }
+}
+
+data "chef_environment" "test" {
+	name = chef_environment.test.id
 }
 `

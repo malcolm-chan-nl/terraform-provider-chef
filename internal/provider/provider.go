@@ -18,7 +18,9 @@ func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		return &schema.Provider{
 			ConfigureContextFunc: providerConfigure,
-			DataSourcesMap:       map[string]*schema.Resource{},
+			DataSourcesMap: map[string]*schema.Resource{
+				"chef_environment": dataChefEnvironment(),
+			},
 			ResourcesMap: map[string]*schema.Resource{
 				"chef_data_bag":      resourceChefDataBag(),
 				"chef_data_bag_item": resourceChefDataBagItem(),

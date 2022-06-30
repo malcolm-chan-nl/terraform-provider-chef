@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	chefc "github.com/go-chef/chef"
@@ -11,10 +13,10 @@ import (
 
 func resourceChefEnvironment() *schema.Resource {
 	return &schema.Resource{
-		Create: CreateEnvironment,
-		Update: UpdateEnvironment,
-		Read:   ReadEnvironment,
-		Delete: DeleteEnvironment,
+		CreateContext: CreateEnvironment,
+		UpdateContext: UpdateEnvironment,
+		ReadContext:   ReadEnvironment,
+		DeleteContext: DeleteEnvironment,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -50,46 +52,66 @@ func resourceChefEnvironment() *schema.Resource {
 	}
 }
 
-func CreateEnvironment(d *schema.ResourceData, meta interface{}) error {
+func CreateEnvironment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	env, err := environmentFromResourceData(d)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error loading environment from resource data",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
 	_, err = client.Environments.Create(env)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error creating environment",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	d.SetId(env.Name)
-	return ReadEnvironment(d, meta)
+	return ReadEnvironment(ctx, d, meta)
 }
 
-func UpdateEnvironment(d *schema.ResourceData, meta interface{}) error {
+func UpdateEnvironment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	env, err := environmentFromResourceData(d)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error loading environment from resource data",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
 	_, err = client.Environments.Put(env)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error updating environment",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	d.SetId(env.Name)
-	return ReadEnvironment(d, meta)
+	return ReadEnvironment(ctx, d, meta)
 }
 
-func ReadEnvironment(d *schema.ResourceData, meta interface{}) error {
+func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
-	name := d.Id()
-
-	env, err := client.Environments.Get(name)
+	env, err := client.Environments.Get(d.Get("name").(string))
 	if err != nil {
 		if errRes, ok := err.(*chefc.ErrorResponse); ok {
 			if errRes.Response.StatusCode == 404 {
@@ -97,22 +119,41 @@ func ReadEnvironment(d *schema.ResourceData, meta interface{}) error {
 				return nil
 			}
 		} else {
-			return err
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Error reading environment",
+					Detail:   fmt.Sprint(err),
+				},
+			}
 		}
 	}
 
+	d.SetId(env.Name)
 	d.Set("name", env.Name)
 	d.Set("description", env.Description)
 
 	defaultAttrJson, err := json.Marshal(env.DefaultAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error parsing default attributes",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 	d.Set("default_attributes_json", string(defaultAttrJson))
 
 	overrideAttrJson, err := json.Marshal(env.OverrideAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error parsing override attributes",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 	d.Set("override_attributes_json", string(overrideAttrJson))
 
@@ -125,7 +166,7 @@ func ReadEnvironment(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func DeleteEnvironment(d *schema.ResourceData, meta interface{}) error {
+func DeleteEnvironment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	name := d.Id()
@@ -137,15 +178,28 @@ func DeleteEnvironment(d *schema.ResourceData, meta interface{}) error {
 
 	httpReq, err := client.NewRequest("DELETE", path, nil)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error deleting environment",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	_, err = client.Do(httpReq, nil)
-	if err == nil {
+	if _, err = client.Do(httpReq, nil); err == nil {
 		d.SetId("")
+	} else {
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error deleting environment",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	return err
+	return nil
 }
 
 func environmentFromResourceData(d *schema.ResourceData) (*chefc.Environment, error) {
