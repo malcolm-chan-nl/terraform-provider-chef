@@ -25,6 +25,7 @@ description: |-
 - `default_attributes_json` (String)
 - `description` (String)
 - `id` (String) The ID of this resource.
+- `json` (String)
 - `override_attributes_json` (String)
 
 

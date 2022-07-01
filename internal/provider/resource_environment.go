@@ -48,6 +48,10 @@ func resourceChefEnvironment() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"json": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -132,6 +136,17 @@ func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface
 	d.SetId(env.Name)
 	d.Set("name", env.Name)
 	d.Set("description", env.Description)
+	envJson, err := json.Marshal(env)
+	if err != nil {
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error converting environment into JSON",
+				Detail:   fmt.Sprint(err),
+			},
+		}
+	}
+	d.Set("json", string(envJson))
 
 	defaultAttrJson, err := json.Marshal(env.DefaultAttributes)
 	if err != nil {

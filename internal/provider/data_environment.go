@@ -29,6 +29,10 @@ func dataChefEnvironment() *schema.Resource {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},
+			"json": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
