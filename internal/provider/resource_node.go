@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	chefc "github.com/go-chef/chef"
@@ -11,10 +13,10 @@ import (
 
 func resourceChefNode() *schema.Resource {
 	return &schema.Resource{
-		Create: CreateNode,
-		Update: UpdateNode,
-		Read:   ReadNode,
-		Delete: DeleteNode,
+		CreateContext: CreateNode,
+		UpdateContext: UpdateNode,
+		ReadContext:   ReadNode,
+		DeleteContext: DeleteNode,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -63,46 +65,66 @@ func resourceChefNode() *schema.Resource {
 	}
 }
 
-func CreateNode(d *schema.ResourceData, meta interface{}) error {
+func CreateNode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	node, err := nodeFromResourceData(d)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error loading node from resource data",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
 	_, err = client.Nodes.Post(*node)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error creating node",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	d.SetId(node.Name)
-	return ReadNode(d, meta)
+	return ReadNode(ctx, d, meta)
 }
 
-func UpdateNode(d *schema.ResourceData, meta interface{}) error {
+func UpdateNode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	node, err := nodeFromResourceData(d)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error loading node from resource data",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
 	_, err = client.Nodes.Put(*node)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error updating node",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	d.SetId(node.Name)
-	return ReadNode(d, meta)
+	return ReadNode(ctx, d, meta)
 }
 
-func ReadNode(d *schema.ResourceData, meta interface{}) error {
+func ReadNode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
-	name := d.Id()
-
-	node, err := client.Nodes.Get(name)
+	node, err := client.Nodes.Get(d.Get("name").(string))
 	if err != nil {
 		if errRes, ok := err.(*chefc.ErrorResponse); ok {
 			if errRes.Response.StatusCode == 404 {
@@ -110,34 +132,65 @@ func ReadNode(d *schema.ResourceData, meta interface{}) error {
 				return nil
 			}
 		} else {
-			return err
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Error reading node",
+					Detail:   fmt.Sprint(err),
+				},
+			}
 		}
 	}
 
+	d.SetId(node.Name)
 	d.Set("name", node.Name)
 	d.Set("environment_name", node.Environment)
 
 	automaticAttrJson, err := json.Marshal(node.AutomaticAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error parsing automatic attributes as JSON",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 	d.Set("automatic_attributes_json", string(automaticAttrJson))
 
 	normalAttrJson, err := json.Marshal(node.NormalAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error parsing normal attributes as JSON",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 	d.Set("normal_attributes_json", string(normalAttrJson))
 
 	defaultAttrJson, err := json.Marshal(node.DefaultAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error parsing default attributes as JSON",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 	d.Set("default_attributes_json", string(defaultAttrJson))
 
 	overrideAttrJson, err := json.Marshal(node.OverrideAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error parsing override attributes as JSON",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 	d.Set("override_attributes_json", string(overrideAttrJson))
 
@@ -150,17 +203,23 @@ func ReadNode(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func DeleteNode(d *schema.ResourceData, meta interface{}) error {
+func DeleteNode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	name := d.Id()
-	err := client.Nodes.Delete(name)
-
-	if err == nil {
-		d.SetId("")
+	if err := client.Nodes.Delete(name); err != nil {
+		return diag.Diagnostics{
+			{
+				Severity: diag.Error,
+				Summary:  "Error deleting node",
+				Detail:   fmt.Sprint(err),
+			},
+		}
 	}
 
-	return err
+	d.SetId("")
+
+	return nil
 }
 
 func nodeFromResourceData(d *schema.ResourceData) (*chefc.Node, error) {

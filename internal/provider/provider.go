@@ -20,6 +20,7 @@ func New(version string) func() *schema.Provider {
 			ConfigureContextFunc: providerConfigure,
 			DataSourcesMap: map[string]*schema.Resource{
 				"chef_environment": dataChefEnvironment(),
+				"chef_node":        dataChefNode(),
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"chef_data_bag":      resourceChefDataBag(),
