@@ -19,14 +19,14 @@ func TestAccUserKey_basic(t *testing.T) {
 		CheckDestroy:      testAccUserKeyCheckDestroy(&key),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserKeyConfig_basic,
+				Config: testSuffixRender(testAccUserKeyConfig_basic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserKeyCheckExists("chef_user_key.test", &key),
 					func(s *terraform.State) error {
 						if expected := "bdwyertech-github"; key.User != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, key.User)
 						}
-						if expected := "testing123"; key.Key.Name != expected {
+						if expected := "testing" + testSuffix; key.Key.Name != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, key.Key.Name)
 						}
 						return nil
@@ -88,7 +88,7 @@ func testAccUserKeyCheckDestroy(key *chefUserKey) resource.TestCheckFunc {
 const testAccUserKeyConfig_basic = `
 resource "chef_user_key" "test" {
 	user = "bdwyertech-github"
-	key_name = "testing123"
+	key_name = "testing{{.}}"
 	public_key = <<-EOT
     -----BEGIN PUBLIC KEY-----
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAGu+lOJXmbCpTpPxwv6

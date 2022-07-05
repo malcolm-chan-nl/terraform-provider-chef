@@ -19,7 +19,7 @@ func TestAccDataBagItem_basic(t *testing.T) {
 		CheckDestroy:      testAccDataBagItemCheckDestroy(dataBagItemName),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataBagItemConfig_basic,
+				Config: testSuffixRender(testAccDataBagItemConfig_basic),
 				Check: testAccDataBagItemCheck(
 					"chef_data_bag_item.test", &dataBagItemName,
 				),
@@ -40,7 +40,7 @@ func testAccDataBagItemCheck(rn string, name *string) resource.TestCheckFunc {
 		}
 
 		client := testAccProvider.Meta().(*chefClient)
-		content, err := client.DataBags.GetItem("terraform-acc-test-bag-item-basic", rs.Primary.ID)
+		content, err := client.DataBags.GetItem("terraform-acc-test-bag-item-basic-"+testSuffix, rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("error getting data bag item: %s", err)
 		}
@@ -66,7 +66,7 @@ func testAccDataBagItemCheck(rn string, name *string) resource.TestCheckFunc {
 func testAccDataBagItemCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := testAccProvider.Meta().(*chefClient)
-		_, err := client.DataBags.GetItem("terraform-acc-test-bag-item-basic", name)
+		_, err := client.DataBags.GetItem("terraform-acc-test-bag-item-basic-"+testSuffix, name)
 		if err == nil {
 			return fmt.Errorf("data bag item still exists")
 		}
@@ -80,11 +80,10 @@ func testAccDataBagItemCheckDestroy(name string) resource.TestCheckFunc {
 
 const testAccDataBagItemConfig_basic = `
 resource "chef_data_bag" "test" {
-  name = "terraform-acc-test-bag-item-basic"
+  name = "terraform-acc-test-bag-item-basic-{{.}}"
 }
 resource "chef_data_bag_item" "test" {
-  data_bag_name = "terraform-acc-test-bag-item-basic"
-  depends_on = ["chef_data_bag.test"]
+  data_bag_name = chef_data_bag.test.id
   content_json = <<EOT
 {
     "id": "terraform_acc_test",

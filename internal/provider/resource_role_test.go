@@ -20,12 +20,12 @@ func TestAccRole_basic(t *testing.T) {
 		CheckDestroy:      testAccRoleCheckDestroy(&role),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccRoleConfig_basic,
+				Config: testSuffixRender(testAccRoleConfig_basic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccRoleCheckExists("chef_role.test", &role),
 					func(s *terraform.State) error {
 
-						if expected := "terraform-acc-test-basic"; role.Name != expected {
+						if expected := "terraform-acc-test-basic-" + testSuffix; role.Name != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, role.Name)
 						}
 						if expected := "Terraform Acceptance Tests"; role.Description != expected {
@@ -103,7 +103,7 @@ func testAccRoleCheckDestroy(role *chefc.Role) resource.TestCheckFunc {
 
 const testAccRoleConfig_basic = `
 resource "chef_role" "test" {
-  name = "terraform-acc-test-basic"
+  name = "terraform-acc-test-basic-{{.}}"
   description = "Terraform Acceptance Tests"
   default_attributes_json = <<EOT
 {

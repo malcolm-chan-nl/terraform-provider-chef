@@ -19,11 +19,11 @@ func TestAccClientKey_basic(t *testing.T) {
 		CheckDestroy:      testAccClientKeyCheckDestroy(&key),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccClientKeyConfig_basic,
+				Config: testSuffixRender(testAccClientKeyConfig_basic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccClientKeyCheckExists("chef_client_key.test", &key),
 					func(s *terraform.State) error {
-						if expected := "terraform-acc-client-key-test-basic"; key.Client != expected {
+						if expected := "terraform-acc-client-key-test-basic-" + testSuffix; key.Client != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, key.Client)
 						}
 						if expected := "default"; key.Key.Name != expected {
@@ -87,7 +87,7 @@ func testAccClientKeyCheckDestroy(key *chefClientKey) resource.TestCheckFunc {
 
 const testAccClientKeyConfig_basic = `
 resource "chef_client" "test-key" {
-  name = "terraform-acc-client-key-test-basic"
+  name = "terraform-acc-client-key-test-basic-{{.}}"
   validator = true
 }
 

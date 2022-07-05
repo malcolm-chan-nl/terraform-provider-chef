@@ -19,12 +19,12 @@ func TestAccClient_basic(t *testing.T) {
 		CheckDestroy:      testAccClientCheckDestroy(&client),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccClientConfig_basic,
+				Config: testSuffixRender(testAccClientConfig_basic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccClientCheckExists("chef_client.test", &client),
 					func(s *terraform.State) error {
 
-						if expected := "terraform-acc-client-test-basic"; client.Name != expected {
+						if expected := "terraform-acc-client-test-basic-" + testSuffix; client.Name != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, client.Name)
 						}
 						if expected := true; client.Validator != expected {
@@ -83,7 +83,7 @@ func testAccClientCheckDestroy(client *chefc.ApiNewClient) resource.TestCheckFun
 
 const testAccClientConfig_basic = `
 resource "chef_client" "test" {
-  name = "terraform-acc-client-test-basic"
+  name = "terraform-acc-client-test-basic-{{.}}"
   validator = true
 }
 `

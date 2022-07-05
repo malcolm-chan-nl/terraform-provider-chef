@@ -71,11 +71,11 @@ jobs:
           terraform_wrapper: false
 
       # Random sleep so acceptance tests do not collide creating objects on Chef Server
-      - name: Wait
-        uses: 1itachi/sleep-random@v1.0.0
-        with:
-          minutes: '2'
-          random: 'true'
+      # - name: Wait
+      #   uses: 1itachi/sleep-random@v1.0.0
+      #   with:
+      #     minutes: '2'
+      #     random: 'true'
 
       - name: TF acceptance tests
         timeout-minutes: 10

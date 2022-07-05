@@ -1,8 +1,13 @@
 package provider
 
 import (
+	"bytes"
+	"crypto/rand"
+	"encoding/hex"
+	"log"
 	"os"
 	"testing"
+	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -32,6 +37,23 @@ var testAccProvider *schema.Provider
 
 func init() {
 	testAccProvider = New("dev")()
+	if testSuffix == "" {
+		bytes := make([]byte, 4)
+		if _, err := rand.Read(bytes); err != nil {
+			log.Fatal(err)
+		}
+		testSuffix = hex.EncodeToString(bytes)
+	}
+}
+
+var testSuffix string
+
+func testSuffixRender(cfg string) string {
+	t := template.Must(template.New("").Parse(cfg))
+	var b bytes.Buffer
+	t.Execute(&b, testSuffix)
+
+	return b.String()
 }
 
 // providerFactories are used to instantiate a provider during acceptance testing.

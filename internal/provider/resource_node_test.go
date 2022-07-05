@@ -20,15 +20,15 @@ func TestAccNode_basic(t *testing.T) {
 		CheckDestroy:      testAccNodeCheckDestroy(&node),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNodeConfig_basic,
+				Config: testSuffixRender(testAccNodeConfig_basic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccNodeCheckExists("chef_node.test", &node),
 					func(s *terraform.State) error {
 
-						if expected := "terraform-acc-test-basic"; node.Name != expected {
+						if expected := "terraform-acc-test-basic-" + testSuffix; node.Name != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, node.Name)
 						}
-						if expected := "terraform-acc-test-node-basic"; node.Environment != expected {
+						if expected := "terraform-acc-test-node-basic-" + testSuffix; node.Environment != expected {
 							return fmt.Errorf("wrong environment; expected %v, got %v", expected, node.Environment)
 						}
 
@@ -41,8 +41,7 @@ func TestAccNode_basic(t *testing.T) {
 							return fmt.Errorf("wrong runlist; expected %#v, got %#v", expectedRunList, node.RunList)
 						}
 
-						var expectedAttributes interface{}
-						expectedAttributes = map[string]interface{}{
+						expectedAttributes := map[string]interface{}{
 							"terraform_acc_test": true,
 						}
 						if !reflect.DeepEqual(node.AutomaticAttributes, expectedAttributes) {
@@ -109,11 +108,11 @@ func testAccNodeCheckDestroy(node *chefc.Node) resource.TestCheckFunc {
 
 const testAccNodeConfig_basic = `
 resource "chef_environment" "test" {
-  name = "terraform-acc-test-node-basic"
+  name = "terraform-acc-test-node-basic-{{.}}"
 }
 resource "chef_node" "test" {
-  name = "terraform-acc-test-basic"
-  environment_name = "terraform-acc-test-node-basic"
+  name = "terraform-acc-test-basic-{{.}}"
+  environment_name = chef_environment.test.id
   automatic_attributes_json = <<EOT
 {
      "terraform_acc_test": true

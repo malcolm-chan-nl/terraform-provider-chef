@@ -18,7 +18,7 @@ func TestAccDataBag_basic(t *testing.T) {
 		CheckDestroy:      testAccDataBagCheckDestroy(dataBagName),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataBagConfig_basic,
+				Config: testSuffixRender(testAccDataBagConfig_basic),
 				Check:  testAccDataBagCheckExists("chef_data_bag.test", &dataBagName),
 			},
 		},
@@ -65,6 +65,6 @@ func testAccDataBagCheckDestroy(name string) resource.TestCheckFunc {
 
 const testAccDataBagConfig_basic = `
 resource "chef_data_bag" "test" {
-  name = "terraform-acc-test-basic"
+  name = "terraform-acc-test-basic-{{.}}"
 }
 `

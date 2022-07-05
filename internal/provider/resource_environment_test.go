@@ -20,12 +20,12 @@ func TestAccEnvironment_basic(t *testing.T) {
 		CheckDestroy:      testAccEnvironmentCheckDestroy(&env),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccEnvironmentConfig_basic,
+				Config: testSuffixRender(testAccEnvironmentConfig_basic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccEnvironmentCheckExists("chef_environment.test", &env),
 					func(s *terraform.State) error {
 
-						if expected := "terraform-acc-test-basic"; env.Name != expected {
+						if expected := "terraform-acc-test-basic-" + testSuffix; env.Name != expected {
 							return fmt.Errorf("wrong name; expected %v, got %v", expected, env.Name)
 						}
 						if expected := "Terraform Acceptance Tests"; env.Description != expected {
@@ -100,7 +100,7 @@ func testAccEnvironmentCheckDestroy(env *chefc.Environment) resource.TestCheckFu
 
 const testAccEnvironmentConfig_basic = `
 resource "chef_environment" "test" {
-  name = "terraform-acc-test-basic"
+  name = "terraform-acc-test-basic-{{.}}"
   description = "Terraform Acceptance Tests"
   default_attributes_json = <<EOT
 {
