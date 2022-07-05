@@ -11,7 +11,7 @@ import (
 )
 
 func TestAccDataBag_basic(t *testing.T) {
-	var dataBagName string
+	dataBagName := "terraform-acc-test-basic-" + testSuffix
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -19,13 +19,13 @@ func TestAccDataBag_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testSuffixRender(testAccDataBagConfig_basic),
-				Check:  testAccDataBagCheckExists("chef_data_bag.test", &dataBagName),
+				Check:  testAccDataBagCheckExists("chef_data_bag.test"),
 			},
 		},
 	})
 }
 
-func testAccDataBagCheckExists(rn string, name *string) resource.TestCheckFunc {
+func testAccDataBagCheckExists(rn string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -41,8 +41,6 @@ func testAccDataBagCheckExists(rn string, name *string) resource.TestCheckFunc {
 		if err != nil {
 			return fmt.Errorf("error getting data bag: %s", err)
 		}
-
-		*name = rs.Primary.ID
 
 		return nil
 	}
