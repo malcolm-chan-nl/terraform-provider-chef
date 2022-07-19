@@ -145,9 +145,7 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 	d.Set("override_attributes_json", string(overrideAttrJson))
 
 	runList := make([]string, len(role.RunList))
-	for idx, item := range role.RunList {
-		runList[idx] = item
-	}
+	copy(runList, role.RunList)
 
 	d.Set("run_list", runList)
 

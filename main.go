@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"log"
 
 	"github.com/bdwyertech/terraform-provider-chef/internal/provider"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
@@ -29,21 +27,13 @@ var (
 )
 
 func main() {
-	var debugMode bool
-
-	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
-	flag.Parse()
-
-	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version)}
-
-	if debugMode {
-		// TODO: update this string with the full name of your provider as used in your configs
-		err := plugin.Debug(context.Background(), "registry.terraform.io/bdwyertech/chef", opts)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		return
+	opts := &plugin.ServeOpts{
+		ProviderAddr: "registry.terraform.io/bdwyertech/chef",
+		ProviderFunc: provider.New(version),
 	}
+
+	flag.BoolVar(&opts.Debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.Parse()
 
 	plugin.Serve(opts)
 }
