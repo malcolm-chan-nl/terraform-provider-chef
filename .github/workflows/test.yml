@@ -19,22 +19,31 @@ on:
 jobs:
   # ensure the code builds...
   build:
-    name: Build
+    name: Build & Lint
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '1.18'
         id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build
+        env:
+          GOFLAGS: '-mod=vendor'
+          STATICCHECK_VERSION: '2022.1.2'
         run: |
-          go build -mod=vendor -v .
+          wget -qO- https://github.com/dominikh/go-tools/releases/download/${STATICCHECK_VERSION}/staticcheck_linux_amd64.tar.gz | tar zxf - --directory /usr/local/bin --strip-components=1 staticcheck/staticcheck
+          go fmt $(go list ./... | grep -v /vendor/) | xargs -I {} -r /bin/sh -c "/bin/echo {} && exit 1"
+          go vet $(go list ./... | grep -v /vendor/)
+          staticcheck --version
+          staticcheck $(go list ./... | grep -v /vendor/)
+          go build .
+
   # run acceptance tests in a matrix with Terraform core versions
   test:
     name: Matrix Test
@@ -60,7 +69,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '1.18'
           cache: true
           check-latest: true
         id: go
