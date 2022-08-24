@@ -21,6 +21,7 @@ func New(version string) func() *schema.Provider {
 			DataSourcesMap: map[string]*schema.Resource{
 				"chef_environment": dataChefEnvironment(),
 				"chef_node":        dataChefNode(),
+				"chef_search":      dataChefSearch(),
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"chef_data_bag":      resourceChefDataBag(),
@@ -34,10 +35,11 @@ func New(version string) func() *schema.Provider {
 			},
 			Schema: map[string]*schema.Schema{
 				"server_url": {
-					Type:        schema.TypeString,
-					Required:    true,
-					DefaultFunc: schema.EnvDefaultFunc("CHEF_SERVER_URL", nil),
-					Description: "URL of the root of the target Chef server or organization.",
+					Type:         schema.TypeString,
+					Required:     true,
+					DefaultFunc:  schema.EnvDefaultFunc("CHEF_SERVER_URL", nil),
+					Description:  "URL of the root of the target Chef server or organization.",
+					ValidateFunc: validateServerURL,
 				},
 				"client_name": {
 					Type:        schema.TypeString,
@@ -70,6 +72,14 @@ func New(version string) func() *schema.Provider {
 type chefClient struct {
 	*chefc.Client
 	Global *chefc.Client
+}
+
+func validateServerURL(val interface{}, key string) (warns []string, errs []error) {
+	url := val.(string)
+	if !strings.HasSuffix(url, "/") {
+		errs = append(errs, fmt.Errorf("chef server_url %s must end with a slash", url))
+	}
+	return
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
