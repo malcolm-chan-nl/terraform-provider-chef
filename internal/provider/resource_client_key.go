@@ -1,6 +1,11 @@
 package provider
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	chefc "github.com/go-chef/chef"
@@ -8,10 +13,10 @@ import (
 
 func resourceChefClientKey() *schema.Resource {
 	return &schema.Resource{
-		Create: CreateClientKey,
-		Update: UpdateClientKey,
-		Read:   ReadClientKey,
-		Delete: DeleteClientKey,
+		CreateContext: CreateClientKey,
+		UpdateContext: UpdateClientKey,
+		ReadContext:   ReadClientKey,
+		DeleteContext: DeleteClientKey,
 
 		Schema: map[string]*schema.Schema{
 			"client": {
@@ -37,7 +42,7 @@ type chefClientKey struct {
 	Key    chefc.AccessKey
 }
 
-func CreateClientKey(d *schema.ResourceData, meta interface{}) error {
+func CreateClientKey(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*chefClient)
 
 	key, err := clientKeyFromResourceData(d)
@@ -46,71 +51,97 @@ func CreateClientKey(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if _, err := c.Clients.AddKey(key.Client, key.Key); err != nil {
-		return err
-	}
-
-	d.SetId(key.Client + "+" + key.Key.Name)
-	return ReadClientKey(d, meta)
-}
-
-func UpdateClientKey(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefClient)
-
-	key, err := clientKeyFromResourceData(d)
-	if err != nil {
-		return err
-	}
-
-	if _, err = c.Clients.UpdateKey(key.Client, key.Key.Name, key.Key); err != nil {
-		return err
-	}
-
-	d.SetId(key.Client + "+" + key.Key.Name)
-	return ReadClientKey(d, meta)
-}
-
-func ReadClientKey(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(*chefClient)
-
-	key, err := clientKeyFromResourceData(d)
-	if err != nil {
-		return err
-	}
-
-	k, err := c.Clients.GetKey(key.Client, key.Key.Name)
-	if err != nil {
-		if errRes, ok := err.(*chefc.ErrorResponse); ok {
-			if errRes.Response.StatusCode == 404 {
-				d.SetId("")
-				return nil
-			}
-		} else {
-			return err
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error creating client key",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("key_name"),
+			},
 		}
 	}
 
-	d.Set("client", key.Client)
-	d.Set("key_name", k.Name)
-	d.Set("public_key", k.PublicKey)
-
-	return nil
+	d.SetId(key.Client + "+" + key.Key.Name)
+	return ReadClientKey(ctx, d, meta)
 }
 
-func DeleteClientKey(d *schema.ResourceData, meta interface{}) error {
+func UpdateClientKey(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*chefClient)
 
 	key, err := clientKeyFromResourceData(d)
 	if err != nil {
 		return err
 	}
-	if _, err = c.Clients.DeleteKey(key.Client, key.Key.Name); err == nil {
-		d.SetId("")
+
+	if _, err := c.Clients.UpdateKey(key.Client, key.Key.Name, key.Key); err != nil {
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error updating client key",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("key_name"),
+			},
+		}
 	}
 
-	return err
+	d.SetId(key.Client + "+" + key.Key.Name)
+	return ReadClientKey(ctx, d, meta)
 }
 
-func clientKeyFromResourceData(d *schema.ResourceData) (*chefClientKey, error) {
+func ReadClientKey(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	c := meta.(*chefClient)
+
+	key, err := clientKeyFromResourceData(d)
+	if err != nil {
+		return err
+	}
+
+	if k, err := c.Clients.GetKey(key.Client, key.Key.Name); err == nil {
+		d.Set("client", key.Client)
+		d.Set("key_name", k.Name)
+		d.Set("public_key", k.PublicKey)
+	} else {
+		if errRes, ok := err.(*chefc.ErrorResponse); ok {
+			if errRes.Response.StatusCode == 404 {
+				d.SetId("")
+			}
+		} else {
+			return diag.Diagnostics{
+				{
+					Severity:      diag.Error,
+					Summary:       "Error reading client key",
+					Detail:        fmt.Sprint(err),
+					AttributePath: cty.GetAttrPath("key_name"),
+				},
+			}
+		}
+	}
+	return nil
+}
+
+func DeleteClientKey(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	c := meta.(*chefClient)
+
+	key, err := clientKeyFromResourceData(d)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Clients.DeleteKey(key.Client, key.Key.Name); err == nil {
+		d.SetId("")
+		return nil
+	} else {
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error deleting client key",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("key_name"),
+			},
+		}
+	}
+}
+
+func clientKeyFromResourceData(d *schema.ResourceData) (*chefClientKey, diag.Diagnostics) {
 	key := &chefClientKey{
 		Client: d.Get("client").(string),
 		Key: chefc.AccessKey{
