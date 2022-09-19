@@ -17,6 +17,9 @@ func resourceChefNode() *schema.Resource {
 		UpdateContext: UpdateNode,
 		ReadContext:   ReadNode,
 		DeleteContext: DeleteNode,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -90,6 +93,8 @@ func CreateNode(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
+	d.SetId(node.Name)
+
 	return ReadNode(ctx, d, meta)
 }
 
@@ -124,7 +129,9 @@ func UpdateNode(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func ReadNode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
-	node, err := client.Nodes.Get(d.Get("name").(string))
+	name := d.Id()
+
+	node, err := client.Nodes.Get(name)
 	if err != nil {
 		if errRes, ok := err.(*chefc.ErrorResponse); ok {
 			if errRes.Response.StatusCode == 404 {
@@ -142,7 +149,6 @@ func ReadNode(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 	}
 
-	d.SetId(node.Name)
 	d.Set("name", node.Name)
 	d.Set("environment_name", node.Environment)
 

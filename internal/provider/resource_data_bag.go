@@ -11,6 +11,9 @@ func resourceChefDataBag() *schema.Resource {
 		Create: CreateDataBag,
 		Read:   ReadDataBag,
 		Delete: DeleteDataBag,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {

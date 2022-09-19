@@ -17,6 +17,9 @@ func resourceChefUserKey() *schema.Resource {
 		UpdateContext: UpdateUserKey,
 		ReadContext:   ReadUserKey,
 		DeleteContext: DeleteUserKey,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"user": {
