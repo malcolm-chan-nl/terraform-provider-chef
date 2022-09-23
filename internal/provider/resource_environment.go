@@ -17,6 +17,9 @@ func resourceChefEnvironment() *schema.Resource {
 		UpdateContext: UpdateEnvironment,
 		ReadContext:   ReadEnvironment,
 		DeleteContext: DeleteEnvironment,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -81,6 +84,8 @@ func CreateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 	}
 
+	d.SetId(env.Name)
+
 	return ReadEnvironment(ctx, d, meta)
 }
 
@@ -115,7 +120,9 @@ func UpdateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
-	env, err := client.Environments.Get(d.Get("name").(string))
+	name := d.Id()
+
+	env, err := client.Environments.Get(name)
 	if err != nil {
 		if errRes, ok := err.(*chefc.ErrorResponse); ok {
 			if errRes.Response.StatusCode == 404 {
@@ -133,7 +140,6 @@ func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 	}
 
-	d.SetId(env.Name)
 	d.Set("name", env.Name)
 	d.Set("description", env.Description)
 	envJson, err := json.Marshal(env)
