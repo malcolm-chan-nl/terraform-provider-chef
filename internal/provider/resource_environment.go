@@ -84,8 +84,6 @@ func CreateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 	}
 
-	d.SetId(env.Name)
-
 	return ReadEnvironment(ctx, d, meta)
 }
 
@@ -120,9 +118,7 @@ func UpdateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
-	name := d.Id()
-
-	env, err := client.Environments.Get(name)
+	env, err := client.Environments.Get(d.Get("name").(string))
 	if err != nil {
 		if errRes, ok := err.(*chefc.ErrorResponse); ok {
 			if errRes.Response.StatusCode == 404 {
@@ -140,6 +136,7 @@ func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 	}
 
+	d.SetId(env.Name)
 	d.Set("name", env.Name)
 	d.Set("description", env.Description)
 	envJson, err := json.Marshal(env)
