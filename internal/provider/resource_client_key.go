@@ -51,14 +51,13 @@ func CreateClientKey(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	if _, err := c.Clients.AddKey(key.Client, key.Key); err != nil {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error creating client key",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("key_name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error creating client key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(key.Client + "+" + key.Key.Name)
@@ -74,14 +73,13 @@ func UpdateClientKey(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	if _, err := c.Clients.UpdateKey(key.Client, key.Key.Name, key.Key); err != nil {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error updating client key",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("key_name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error updating client key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(key.Client + "+" + key.Key.Name)
@@ -101,20 +99,17 @@ func ReadClientKey(ctx context.Context, d *schema.ResourceData, meta interface{}
 		d.Set("key_name", k.Name)
 		d.Set("public_key", k.PublicKey)
 	} else {
-		if errRes, ok := err.(*chefc.ErrorResponse); ok {
-			if errRes.Response.StatusCode == 404 {
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error reading client key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			if cheferr.Response.StatusCode == 404 {
 				d.SetId("")
+				return nil
 			}
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
 		} else {
-			return diag.Diagnostics{
-				{
-					Severity:      diag.Error,
-					Summary:       "Error reading client key",
-					Detail:        fmt.Sprint(err),
-					AttributePath: cty.GetAttrPath("key_name"),
-				},
-			}
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 	return nil
 }
@@ -130,14 +125,13 @@ func DeleteClientKey(ctx context.Context, d *schema.ResourceData, meta interface
 		d.SetId("")
 		return nil
 	} else {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error deleting client key",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("key_name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error deleting client key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 }
 

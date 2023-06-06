@@ -15,9 +15,9 @@ import (
 func resourceChefRole() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: CreateRole,
-		Update:        UpdateRole,
-		Read:          ReadRole,
-		Delete:        DeleteRole,
+		UpdateContext: UpdateRole,
+		ReadContext:   ReadRole,
+		DeleteContext: DeleteRole,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -74,48 +74,50 @@ func CreateRole(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	_, err = client.Roles.Create(role)
 	if err != nil {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error creating Chef Role",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error creating Chef Role", AttributePath: cty.GetAttrPath("name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(role.Name)
-	if err = ReadRole(d, meta); err != nil {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error reading Chef Role",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("name"),
-			},
-		}
-	}
-	return nil
+	return ReadRole(ctx, d, meta)
 }
 
-func UpdateRole(d *schema.ResourceData, meta interface{}) error {
+func UpdateRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	role, err := roleFromResourceData(d)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error reading Chef Role from Resource Data",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("name"),
+			},
+		}
 	}
 
 	_, err = client.Roles.Put(role)
 	if err != nil {
-		return err
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error updating Chef Role", AttributePath: cty.GetAttrPath("name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
+		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(role.Name)
-	return ReadRole(d, meta)
+	return ReadRole(ctx, d, meta)
 }
 
-func ReadRole(d *schema.ResourceData, meta interface{}) error {
+func ReadRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	name := d.Id()
@@ -128,7 +130,14 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 				return nil
 			}
 		} else {
-			return err
+			return diag.Diagnostics{
+				{
+					Severity:      diag.Error,
+					Summary:       "Error reading Chef Role",
+					Detail:        fmt.Sprint(err),
+					AttributePath: cty.GetAttrPath("name"),
+				},
+			}
 		}
 	}
 
@@ -137,13 +146,27 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 
 	defaultAttrJson, err := json.Marshal(role.DefaultAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error reading Chef Role default attributes as JSON",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("name"),
+			},
+		}
 	}
 	d.Set("default_attributes_json", string(defaultAttrJson))
 
 	overrideAttrJson, err := json.Marshal(role.OverrideAttributes)
 	if err != nil {
-		return err
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error reading Chef Role override attributes as JSON",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("name"),
+			},
+		}
 	}
 	d.Set("override_attributes_json", string(overrideAttrJson))
 
@@ -155,12 +178,22 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func DeleteRole(d *schema.ResourceData, meta interface{}) error {
+func DeleteRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*chefClient)
 
 	name := d.Id()
 
-	return client.Roles.Delete(name)
+	err := client.Roles.Delete(name)
+	if err != nil {
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error deleting Chef Role", AttributePath: cty.GetAttrPath("name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
+		}
+		return diag.Diagnostics{resp}
+	}
+	return nil
 }
 
 func roleFromResourceData(d *schema.ResourceData) (*chefc.Role, error) {

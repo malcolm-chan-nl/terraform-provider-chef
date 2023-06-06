@@ -54,14 +54,13 @@ func CreateUserKey(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	if _, err := c.Global.Users.AddKey(key.User, key.Key); err != nil {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error creating user key",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("key_name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error creating user key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(key.User + "+" + key.Key.Name)
@@ -77,14 +76,13 @@ func UpdateUserKey(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	if _, err := c.Global.Users.UpdateKey(key.User, key.Key.Name, key.Key); err != nil {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error updating user key",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("key_name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error updating user key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(key.User + "+" + key.Key.Name)
@@ -104,20 +102,17 @@ func ReadUserKey(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		d.Set("key_name", k.Name)
 		d.Set("public_key", k.PublicKey)
 	} else {
-		if errRes, ok := err.(*chefc.ErrorResponse); ok {
-			if errRes.Response.StatusCode == 404 {
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error reading user key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			if cheferr.Response.StatusCode == 404 {
 				d.SetId("")
+				return nil
 			}
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
 		} else {
-			return diag.Diagnostics{
-				{
-					Severity:      diag.Error,
-					Summary:       "Error reading user key",
-					Detail:        fmt.Sprint(err),
-					AttributePath: cty.GetAttrPath("key_name"),
-				},
-			}
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 	return nil
 }
@@ -133,14 +128,13 @@ func DeleteUserKey(ctx context.Context, d *schema.ResourceData, meta interface{}
 		d.SetId("")
 		return nil
 	} else {
-		return diag.Diagnostics{
-			{
-				Severity:      diag.Error,
-				Summary:       "Error deleting user key",
-				Detail:        fmt.Sprint(err),
-				AttributePath: cty.GetAttrPath("key_name"),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error deleting user key", AttributePath: cty.GetAttrPath("key_name")}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 }
 
