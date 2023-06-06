@@ -102,6 +102,7 @@ const testAccEnvironmentConfig_basic = `
 resource "chef_environment" "test" {
   name = "terraform-acc-test-basic-{{.}}"
   description = "Terraform Acceptance Tests"
+  allow_overwrite = true
   default_attributes_json = <<EOT
 {
      "terraform_acc_test": true
