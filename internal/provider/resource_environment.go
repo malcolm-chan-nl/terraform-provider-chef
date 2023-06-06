@@ -32,6 +32,11 @@ func resourceChefEnvironment() *schema.Resource {
 				Optional: true,
 				Default:  "Managed by Terraform",
 			},
+			"allow_overwrite": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"default_attributes_json": {
 				Type:      schema.TypeString,
 				Optional:  true,
@@ -70,6 +75,20 @@ func CreateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 				Summary:  "Error loading environment from resource data",
 				Detail:   fmt.Sprint(err),
 			},
+		}
+	}
+
+	// Check if the environment already exists
+	if d.Id() != "" {
+		if d.Get("allow_overwrite").(bool) {
+			return UpdateEnvironment(ctx, d, meta)
+		} else {
+			return diag.Diagnostics{
+				{
+					Severity: diag.Error,
+					Summary:  "Environment already exists and allow_overwrite is set to false",
+				},
+			}
 		}
 	}
 
