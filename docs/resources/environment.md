@@ -21,6 +21,7 @@ description: |-
 
 ### Optional
 
+- `allow_overwrite` (Boolean)
 - `cookbook_constraints` (Map of String)
 - `default_attributes_json` (String)
 - `description` (String)
