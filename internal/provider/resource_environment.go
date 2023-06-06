@@ -94,13 +94,13 @@ func CreateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	_, err = client.Environments.Create(env)
 	if err != nil {
-		return diag.Diagnostics{
-			{
-				Severity: diag.Error,
-				Summary:  "Error creating environment",
-				Detail:   fmt.Sprint(err),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error creating environment"}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	return ReadEnvironment(ctx, d, meta)
@@ -122,13 +122,13 @@ func UpdateEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	_, err = client.Environments.Put(env)
 	if err != nil {
-		return diag.Diagnostics{
-			{
-				Severity: diag.Error,
-				Summary:  "Error updating environment",
-				Detail:   fmt.Sprint(err),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error updating environment"}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	return ReadEnvironment(ctx, d, meta)
@@ -139,20 +139,17 @@ func ReadEnvironment(ctx context.Context, d *schema.ResourceData, meta interface
 
 	env, err := client.Environments.Get(d.Get("name").(string))
 	if err != nil {
-		if errRes, ok := err.(*chefc.ErrorResponse); ok {
-			if errRes.Response.StatusCode == 404 {
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error reading environment"}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			if cheferr.Response.StatusCode == 404 {
 				d.SetId("")
 				return nil
 			}
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
 		} else {
-			return diag.Diagnostics{
-				{
-					Severity: diag.Error,
-					Summary:  "Error reading environment",
-					Detail:   fmt.Sprint(err),
-				},
-			}
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	d.SetId(env.Name)
@@ -208,32 +205,16 @@ func DeleteEnvironment(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	name := d.Id()
 
-	// For some reason Environments.Delete is not exposed by the
-	// underlying client library, so we have to do this manually.
-
-	path := fmt.Sprintf("environments/%s", name)
-
-	httpReq, err := client.NewRequest("DELETE", path, nil)
-	if err != nil {
-		return diag.Diagnostics{
-			{
-				Severity: diag.Error,
-				Summary:  "Error deleting environment",
-				Detail:   fmt.Sprint(err),
-			},
-		}
-	}
-
-	if _, err = client.Do(httpReq, nil); err == nil {
+	if _, err := client.Environments.Delete(name); err == nil {
 		d.SetId("")
 	} else {
-		return diag.Diagnostics{
-			{
-				Severity: diag.Error,
-				Summary:  "Error deleting environment",
-				Detail:   fmt.Sprint(err),
-			},
+		resp := diag.Diagnostic{Severity: diag.Error, Summary: "Error deleting environment"}
+		if cheferr, ok := err.(*chefc.ErrorResponse); ok {
+			resp.Detail = fmt.Sprintln(cheferr.ErrorMsg, cheferr)
+		} else {
+			resp.Detail = fmt.Sprint(err)
 		}
+		return diag.Diagnostics{resp}
 	}
 
 	return nil
