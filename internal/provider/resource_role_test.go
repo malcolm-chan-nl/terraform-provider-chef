@@ -51,6 +51,9 @@ func TestAccRole_basic(t *testing.T) {
 						if !reflect.DeepEqual(role.OverrideAttributes, expectedAttributes) {
 							return fmt.Errorf("wrong override attributes; expected %#v, got %#v", expectedAttributes, role.OverrideAttributes)
 						}
+						if !reflect.DeepEqual(role.EnvRunLists, expectedAttributes) {
+							return fmt.Errorf("wrong environment run lists; expected %#v, got %#v", expectedAttributes, role.EnvRunLists)
+						}
 
 						return nil
 					},
@@ -111,6 +114,11 @@ resource "chef_role" "test" {
 }
 EOT
   override_attributes_json = <<EOT
+{
+     "terraform_acc_test": true
+}
+EOT
+  env_run_lists_json = <<EOT
 {
      "terraform_acc_test": true
 }

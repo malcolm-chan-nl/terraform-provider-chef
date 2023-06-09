@@ -24,6 +24,7 @@ description: |-
 - `default_attributes_json` (String)
 - `description` (String)
 - `override_attributes_json` (String)
+- `env_run_lists` (String)
 - `run_list` (List of String)
 
 ### Read-Only

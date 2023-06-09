@@ -45,6 +45,12 @@ func resourceChefRole() *schema.Resource {
 				Default:   "{}",
 				StateFunc: jsonStateFunc,
 			},
+			"env_run_lists_json": {
+				Type:      schema.TypeString,
+				Optional:  true,
+				Default:   "{}",
+				StateFunc: jsonStateFunc,
+			},
 			"run_list": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -170,6 +176,19 @@ func ReadRole(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	}
 	d.Set("override_attributes_json", string(overrideAttrJson))
 
+	envrunLists, err := json.Marshal(role.EnvRunLists)
+	if err != nil {
+		return diag.Diagnostics{
+			{
+				Severity:      diag.Error,
+				Summary:       "Error reading Chef Role ENV Run List as JSON",
+				Detail:        fmt.Sprint(err),
+				AttributePath: cty.GetAttrPath("name"),
+			},
+		}
+	}
+	d.Set("env_run_lists_json", string(envrunLists))
+
 	runList := make([]string, len(role.RunList))
 	copy(runList, role.RunList)
 
@@ -218,6 +237,14 @@ func roleFromResourceData(d *schema.ResourceData) (*chefc.Role, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("override_attributes_json: %s", err)
+	}
+
+	err = json.Unmarshal(
+		[]byte(d.Get("env_run_lists_json").(string)),
+		&role.EnvRunLists,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("env_run_lists_json: %s", err)
 	}
 
 	runListI := d.Get("run_list").([]interface{})
